@@ -22,7 +22,7 @@ export function useCallKeyboardOffsetStyle(): CSSProperties {
 
         const isAndroidMobile =
             /Android/i.test(navigator.userAgent) &&
-            window.matchMedia("(max-width: 500px) and (hover: none) and (pointer: coarse)").matches;
+            window.matchMedia("(max-width: 500px) and ((hover: none) or (pointer: coarse))").matches;
 
         if (isAndroidMobile) {
             setOffset(0);

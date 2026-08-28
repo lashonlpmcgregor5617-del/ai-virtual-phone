@@ -1032,7 +1032,7 @@
    距 20→5.13vw、图标 58→14.87vw、dock 354→90.77vw），窄屏呈现与正常
    手机完全相同的比例观感，无多余留白；网格/dock 同源，天然对齐。
    ≥374px 不受影响。 */
-@media (max-width: 373px) and (hover: none) and (pointer: coarse) {
+@media (max-width: 373px) and ((hover: none) or (pointer: coarse)) {
   .icon-grid,
   .dock {
     --slot-size: 16.92vw;
@@ -1056,7 +1056,7 @@
 
 /* ── Mobile responsive ── */
 
-@media (max-width: 500px) and (hover: none) and (pointer: coarse) {
+@media (max-width: 500px) and ((hover: none) or (pointer: coarse)) {
 
   /* 用户在设置里显式开启「显示系统状态栏」且运行时不在全屏时，控制器才会挂
      data-pwa-display-mode 标记（见 pwa-manifest-injector）：此时所有 App 共用系统
@@ -1088,16 +1088,28 @@
     --phone-screen-height: 100lvh;
   }
 
+  /* 少数安卓内置浏览器（微信/QQ 等 WebView 内核）不认 lvh 单位：
+     这时 --phone-screen-height 代入 height 会被判定为无效值，.phone-shell
+     的高度会跌回 auto，屏幕填不满、露出底部背景，看起来像"没全屏"。
+     用 100vh 兜底，让这些浏览器至少铺满一屏。 */
+  @supports not (height: 1lvh) {
+    :root {
+      --phone-screen-height: 100vh;
+    }
+  }
+
   html,
   body {
     overflow: hidden;
     width: 100%;
+    height: 100vh;
     height: 100lvh;
     background: var(--c-page-body-bg);
   }
 
   .app-root {
     width: 100vw;
+    height: 100vh;
     height: 100lvh;
     padding: 0;
     display: flex;
@@ -1154,6 +1166,7 @@
 
   .app-root.splash-root {
     width: 100vw;
+    height: 100vh;
     height: 100lvh;
     margin: 0;
     padding: 0;

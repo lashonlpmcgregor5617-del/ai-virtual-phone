@@ -88,7 +88,7 @@ export function SplashAnimation() {
     const supportsCanvasFilter = typeof (ctx as CanvasRenderingContext2D & { filter?: string }).filter === "string";
     const useSoftEdgeFallback =
       !supportsCanvasFilter ||
-      window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+      window.matchMedia("(hover: none) or (pointer: coarse)").matches;
 
     let W = 0;
     let H = 0;
