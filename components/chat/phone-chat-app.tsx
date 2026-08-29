@@ -40,6 +40,8 @@ export const PhoneChatApp = memo(function PhoneChatApp({ onClose, initialSession
     const [visitedSessions, setVisitedSessions] = useState<Map<string, ChatSession>>(new Map());
     const [dbReady, setDbReady] = useState(false);
     const [hideTabBar, setHideTabBar] = useState(false);
+    const roomSwipeTouchRef = useRef<{ startX: number; startY: number; startTime: number } | null>(null);
+    const mainSwipeTouchRef = useRef<{ startX: number; startY: number; startTime: number } | null>(null);
 
     // Hydrate IndexedDB → in-memory caches on mount
     useEffect(() => {
@@ -242,7 +244,34 @@ export const PhoneChatApp = memo(function PhoneChatApp({ onClose, initialSession
             {/* Chat app-level custom CSS (lower priority than per-session CSS) */}
             {chatAppCSS && <SessionCustomCSS css={chatAppCSS} scope=".chat-app" />}
             {/* The Main Content Area */}
-            <div className="chat-main-content relative flex-1 flex flex-col overflow-hidden" {...(activeSession || activeMascot ? { "data-covered-by-room": "" } : {})}>
+            <div
+                className="chat-main-content relative flex-1 flex flex-col overflow-hidden"
+                {...(activeSession || activeMascot ? { "data-covered-by-room": "" } : {})}
+                onTouchStart={(e) => {
+                    if (activeSession || activeMascot) return;
+                    const touch = e.touches[0];
+                    if (!touch) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const relativeX = touch.clientX - rect.left;
+                    if (relativeX <= 45) {
+                        mainSwipeTouchRef.current = { startX: touch.clientX, startY: touch.clientY, startTime: Date.now() };
+                    } else {
+                        mainSwipeTouchRef.current = null;
+                    }
+                }}
+                onTouchEnd={(e) => {
+                    if (activeSession || activeMascot || !mainSwipeTouchRef.current) return;
+                    const touch = e.changedTouches[0];
+                    if (!touch) return;
+                    const dx = touch.clientX - mainSwipeTouchRef.current.startX;
+                    const dy = Math.abs(touch.clientY - mainSwipeTouchRef.current.startY);
+                    const dt = Date.now() - mainSwipeTouchRef.current.startTime;
+                    mainSwipeTouchRef.current = null;
+                    if (dx > 45 && dy < Math.max(35, dx * 0.7) && dt < 600) {
+                        onClose();
+                    }
+                }}
+            >
                 {activeTab === "messages" && <ChatMessageList onCloseApp={onClose} activeSession={activeSession} onSelectSession={(session) => { setActiveMascot(false); setActiveSession(session); }} onSelectMascot={handleSelectMascot} />}
                 {activeTab === "contacts" && (
                     <ChatContactsList
@@ -300,7 +329,34 @@ export const PhoneChatApp = memo(function PhoneChatApp({ onClose, initialSession
 
             {/* Chat Rooms — all visited sessions stay mounted, only active one is visible */}
             {[...visitedSessions.values()].map(sess => (
-                <div key={sess.id} style={{ display: activeSession?.id === sess.id ? undefined : 'none' }} className="chat-room-layer absolute inset-0">
+                <div
+                    key={sess.id}
+                    style={{ display: activeSession?.id === sess.id ? undefined : 'none' }}
+                    className="chat-room-layer absolute inset-0"
+                    onTouchStart={(e) => {
+                        const touch = e.touches[0];
+                        if (!touch) return;
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const relativeX = touch.clientX - rect.left;
+                        if (relativeX <= 45) {
+                            roomSwipeTouchRef.current = { startX: touch.clientX, startY: touch.clientY, startTime: Date.now() };
+                        } else {
+                            roomSwipeTouchRef.current = null;
+                        }
+                    }}
+                    onTouchEnd={(e) => {
+                        if (!roomSwipeTouchRef.current) return;
+                        const touch = e.changedTouches[0];
+                        if (!touch) return;
+                        const dx = touch.clientX - roomSwipeTouchRef.current.startX;
+                        const dy = Math.abs(touch.clientY - roomSwipeTouchRef.current.startY);
+                        const dt = Date.now() - roomSwipeTouchRef.current.startTime;
+                        roomSwipeTouchRef.current = null;
+                        if (dx > 45 && dy < Math.max(35, dx * 0.7) && dt < 600) {
+                            setActiveSession(null);
+                        }
+                    }}
+                >
                     <ChatRoom
                         session={sess}
                         onBack={() => setActiveSession(null)}
@@ -317,7 +373,32 @@ export const PhoneChatApp = memo(function PhoneChatApp({ onClose, initialSession
                 </div>
             ))}
             {activeMascot && (
-                <div className="chat-room-layer absolute inset-0">
+                <div
+                    className="chat-room-layer absolute inset-0"
+                    onTouchStart={(e) => {
+                        const touch = e.touches[0];
+                        if (!touch) return;
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const relativeX = touch.clientX - rect.left;
+                        if (relativeX <= 45) {
+                            roomSwipeTouchRef.current = { startX: touch.clientX, startY: touch.clientY, startTime: Date.now() };
+                        } else {
+                            roomSwipeTouchRef.current = null;
+                        }
+                    }}
+                    onTouchEnd={(e) => {
+                        if (!roomSwipeTouchRef.current) return;
+                        const touch = e.changedTouches[0];
+                        if (!touch) return;
+                        const dx = touch.clientX - roomSwipeTouchRef.current.startX;
+                        const dy = Math.abs(touch.clientY - roomSwipeTouchRef.current.startY);
+                        const dt = Date.now() - roomSwipeTouchRef.current.startTime;
+                        roomSwipeTouchRef.current = null;
+                        if (dx > 45 && dy < Math.max(35, dx * 0.7) && dt < 600) {
+                            setActiveMascot(false);
+                        }
+                    }}
+                >
                     <MascotChatRoom
                         onBack={() => setActiveMascot(false)}
                         onDeleted={() => setActiveMascot(false)}

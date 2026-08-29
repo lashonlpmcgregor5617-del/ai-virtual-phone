@@ -4,6 +4,7 @@
 
 .chat-app {
   background: transparent;
+  overscroll-behavior-x: contain;
   --ctx-menu-bg: #2c2c2c;
   --page-header-content-height: 54px;
   --chat-tabbar-content-height: 68px;
