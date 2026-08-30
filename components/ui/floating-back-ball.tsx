@@ -108,8 +108,7 @@ export function FloatingBackBall({
     }
   }, [onCloseApp]);
 
-  // 只有当有正在打开的应用时才展示悬浮返回键，桌面主屏不展示
-  if (!activeApp) return null;
+  // 全局始终展示（所有页面包括主桌面、聊天、查手机等全部常驻）
 
   return (
     <div
