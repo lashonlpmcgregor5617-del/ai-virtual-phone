@@ -87,9 +87,10 @@ export function FloatingBackBall({
     // 点击事件（非拖拽）：执行系统级的精准逐级返回
     if (dt < 400) {
       // 1. 优先关闭顶层弹窗/遮罩层 (Modal / Dialog / Drawer / Settings)
+      // 包含：界面微调抽屉、聊天设置层 (.chat-settings-layer)、各类全屏设置或弹窗返回按钮
       const visibleModalClose = Array.from(
         document.querySelectorAll<HTMLElement>(
-          '.modal-close, .dialog-close, .chat-settings-panel .page-back-btn, [data-modal-close="true"], .modal-overlay button.ui-btn-ghost'
+          '.chat-settings-layer .page-back-btn, .modal-close, .dialog-close, [data-modal-close="true"], .modal-overlay button.ui-btn-ghost'
         )
       ).reverse().find(btn => {
         const s = window.getComputedStyle(btn);
