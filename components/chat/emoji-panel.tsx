@@ -80,7 +80,7 @@ export function EmojiPanel({ onSelect, onEffectSend }: EmojiPanelProps) {
     const showEffectTab = enabledEffects.length > 0;
 
     return (
-        <div className="h-[220px] flex flex-col">
+        <div className="flex flex-col" style={{ height: "calc(220px + var(--chat-tweak-panel-height-delta, 0px))" }}>
             <div className="flex gap-0.5 px-2 py-1 overflow-x-auto shrink-0 hide-scrollbar">
                 {showEffectTab && (
                     <button
@@ -168,7 +168,7 @@ export function StickerPanel({ onSend, characterId, characterIds }: StickerPanel
     const activePack = stickerPacks.find(pack => pack.id === activePackId) ?? stickerPacks[0] ?? null;
 
     return (
-        <div className="h-[220px] flex flex-col">
+        <div className="flex flex-col" style={{ height: "calc(220px + var(--chat-tweak-panel-height-delta, 0px))" }}>
             {stickerPacks.length > 0 && (
                 <div className="flex gap-0.5 px-2 py-1 overflow-x-auto shrink-0 hide-scrollbar">
                     {stickerPacks.map(pack => (

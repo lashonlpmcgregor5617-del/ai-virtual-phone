@@ -50,21 +50,30 @@
 .chat-app .chat-room-wrapper.page-shell {
   overflow: hidden;
   --chat-bottom-reserve: 120px;
+  --chat-tweak-top-offset: 0px;
+  --chat-tweak-header-height-delta: 0px;
+  --chat-tweak-title-offset-y: 0px;
+  --chat-tweak-bottom-lift: 0px;
+  --chat-tweak-input-padding-x: 0px;
+  --chat-tweak-panel-height-delta: 0px;
+  --chat-tweak-keyboard-offset: 0px;
 }
 
 .chat-app .chat-room-wrapper .page-header {
   position: absolute;
-  top: 0;
+  top: var(--chat-tweak-top-offset, 0px);
   left: 0;
   right: 0;
   z-index: 10;
+  height: calc(var(--page-header-content-height, 54px) + var(--chat-tweak-header-height-delta, 0px));
+  transform: translateY(var(--chat-tweak-title-offset-y, 0px));
 }
 
 /* 聊天插件 chat.header 坑位：头部与消息区都是 absolute 浮层，坑位必须自己定位，
    贴在固定头部正下方。消息区 padding-top 额外加了插件条高度变量，避免遮住首条消息。 */
 .chat-app .chat-room-wrapper .chat-plugin-header {
   position: absolute;
-  top: calc(var(--safe-area-top, 48px) + var(--page-header-content-height, 42px));
+  top: calc(var(--safe-area-top, 48px) + var(--page-header-content-height, 42px) + var(--chat-tweak-top-offset, 0px) + var(--chat-tweak-header-height-delta, 0px));
   left: 0;
   right: 0;
   z-index: 9;
@@ -94,11 +103,11 @@
   flex: none;
   min-height: 0;
   overflow-y: auto;
-  padding-top: calc(var(--safe-area-top, 48px) + var(--page-header-content-height, 42px) + 36px + var(--chat-plugin-header-height, 0px));
+  padding-top: calc(var(--safe-area-top, 48px) + var(--page-header-content-height, 42px) + 36px + var(--chat-plugin-header-height, 0px) + var(--chat-tweak-top-offset, 0px) + var(--chat-tweak-header-height-delta, 0px));
   padding-left: 16px;
   padding-right: 16px;
-  padding-bottom: 18px;
-  scroll-padding-bottom: calc(var(--chat-bottom-reserve, 120px) + 18px);
+  padding-bottom: calc(18px + var(--chat-tweak-bottom-lift, 0px));
+  scroll-padding-bottom: calc(var(--chat-bottom-reserve, 120px) + 18px + var(--chat-tweak-bottom-lift, 0px));
 }
 
 .chat-app .chat-room-wrapper > .page-body::after {
@@ -642,11 +651,11 @@
 
 .chat-input-bar {
   position: absolute;
-  bottom: 0;
+  bottom: var(--chat-tweak-bottom-lift, 0px);
   left: 0;
   right: 0;
   z-index: 10;
-  padding: 8px 16px max(8px, env(safe-area-inset-bottom, 0px));
+  padding: 8px calc(16px + var(--chat-tweak-input-padding-x, 0px)) max(8px, env(safe-area-inset-bottom, 0px));
   background: color-mix(in srgb, var(--c-input, var(--c-page-body-bg)) 55%, transparent);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);

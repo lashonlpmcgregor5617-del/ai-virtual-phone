@@ -84,6 +84,7 @@ import {
 import { abortableDelay, throwIfAborted } from "@/lib/abort-utils";
 import { GROUP_SELF_KEY, canGroupAdminAct, applyGroupAdminAction, buildGroupAdminNoticeText, getGroupMemberDisplayName, getGroupMuteRemainingMs, getGroupRole, isGroupMuted, formatMuteRemainingLabel, resolveGroupMemberKeyByName, type GroupAdminAction } from "@/lib/group-admin";
 import { extractTextToolDirectiveText } from "@/lib/text-tool-protocol";
+import { loadChatLayoutTweaks, CHAT_LAYOUT_TWEAKS_UPDATED_EVENT, type ChatLayoutTweaks } from "@/lib/chat-layout-tweaks";
 import { emitChatPluginEvent, getChatPluginHookBus, runChatPluginTransform } from "@/lib/chat-plugin-hooks";
 import { CHAT_PLUGIN_TOAST_EVENT, getChatPluginRuntime } from "@/lib/chat-plugin-runtime";
 import { ChatPluginSlot } from "@/components/chat/chat-plugin-slot";
@@ -1162,6 +1163,15 @@ export function ChatRoom({ session, onBack, onDeleted }: ChatRoomProps) {
 
     const [bgImageResolved, setBgImageResolved] = useState<string | null>(null);
     const [bgLoading, setBgLoading] = useState(!!session.backgroundImage);
+    const [layoutTweaks, setLayoutTweaks] = useState<ChatLayoutTweaks>(() => loadChatLayoutTweaks(session.id));
+
+    useEffect(() => {
+        const syncTweaks = () => {
+            setLayoutTweaks(loadChatLayoutTweaks(session.id));
+        };
+        window.addEventListener(CHAT_LAYOUT_TWEAKS_UPDATED_EVENT, syncTweaks);
+        return () => window.removeEventListener(CHAT_LAYOUT_TWEAKS_UPDATED_EVENT, syncTweaks);
+    }, [session.id]);
 
     const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -5152,13 +5162,24 @@ export function ChatRoom({ session, onBack, onDeleted }: ChatRoomProps) {
         }
     }
 
+    const tweaksStyle: Record<string, string> = useMemo(() => ({
+        "--chat-tweak-top-offset": `${layoutTweaks.topOffset || 0}px`,
+        "--chat-tweak-header-height-delta": `${layoutTweaks.headerHeightDelta || 0}px`,
+        "--chat-tweak-title-offset-y": `${layoutTweaks.titleOffsetY || 0}px`,
+        "--chat-tweak-bottom-lift": `${layoutTweaks.bottomLift || 0}px`,
+        "--chat-tweak-input-padding-x": `${layoutTweaks.inputPaddingX || 0}px`,
+        "--chat-tweak-panel-height-delta": `${layoutTweaks.panelHeightDelta || 0}px`,
+        "--chat-tweak-keyboard-offset": `${layoutTweaks.keyboardOffset || 0}px`,
+    }), [layoutTweaks]);
+
     const chatRoomBackgroundStyle = bgImageResolved ? {
         backgroundColor: "#fff",
         backgroundImage: `url(${bgImageResolved})`,
         backgroundPosition: "center",
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
-    } : undefined;
+        ...tweaksStyle,
+    } : tweaksStyle;
 
     return (
         <div ref={wrapperRef} className={`session-${session.id} chat-room-wrapper page-shell inset-0 flex flex-col z-20`} style={chatRoomBackgroundStyle} {...(bgLoading ? { "data-loading": "" } : {})} {...(bgImageResolved ? { "data-has-bg-image": "" } : {})} {...(showSettings ? { "data-settings-open": "" } : {})}>
