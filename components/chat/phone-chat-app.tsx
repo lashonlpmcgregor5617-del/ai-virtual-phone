@@ -352,7 +352,7 @@ export const PhoneChatApp = memo(function PhoneChatApp({ onClose, initialSession
                         const dy = Math.abs(touch.clientY - roomSwipeTouchRef.current.startY);
                         const dt = Date.now() - roomSwipeTouchRef.current.startTime;
                         roomSwipeTouchRef.current = null;
-                        if (dx > 45 && dy < Math.max(35, dx * 0.7) && dt < 600) {
+                        if (dx > 35 && dy < Math.max(50, dx * 0.85) && dt < 750) {
                             setActiveSession(null);
                         }
                     }}

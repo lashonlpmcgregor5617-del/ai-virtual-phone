@@ -4488,9 +4488,13 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:#121110;color:rgb
                   const dt = Date.now() - start.time;
                   if (dx > 45 && dy < Math.max(60, dx * 0.8) && dt < 700) {
                     if (activeApp === "chat") {
-                      setActiveApp(null);
-                      setActiveChatSession(null);
-                      setChatInitSessionId(null);
+                      if (activeChatSession || chatInitSessionId) {
+                        // 如果正在角色聊天室内，优先退出聊天室回到联系人/消息列表，而不是直接退到桌面
+                        setActiveChatSession(null);
+                        setChatInitSessionId(null);
+                      } else {
+                        setActiveApp(null);
+                      }
                     } else if (activeApp === "xiaohongshu") {
                       handleCloseXiaohongshu();
                     } else if (activeApp === "shopping") {
