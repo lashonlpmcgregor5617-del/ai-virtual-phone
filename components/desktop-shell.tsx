@@ -4464,6 +4464,42 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:#121110;color:rgb
                   touchAction: activeApp ? undefined : editMode ? "none" : "pan-y",
                   ...(!desktopReady && !activeApp ? { visibility: "hidden" } : {}),
                 }}
+                onTouchStart={(e) => {
+                  if (!activeApp) return;
+                  const touch = e.touches[0];
+                  if (!touch) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const relX = touch.clientX - rect.left;
+                  if (relX <= 60) {
+                    (e.currentTarget as any)._globalTouchStart = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+                  } else {
+                    (e.currentTarget as any)._globalTouchStart = null;
+                  }
+                }}
+                onTouchEnd={(e) => {
+                  if (!activeApp) return;
+                  const start = (e.currentTarget as any)._globalTouchStart;
+                  if (!start) return;
+                  (e.currentTarget as any)._globalTouchStart = null;
+                  const touch = e.changedTouches[0];
+                  if (!touch) return;
+                  const dx = touch.clientX - start.x;
+                  const dy = Math.abs(touch.clientY - start.y);
+                  const dt = Date.now() - start.time;
+                  if (dx > 45 && dy < Math.max(60, dx * 0.8) && dt < 700) {
+                    if (activeApp === "chat") {
+                      setActiveApp(null);
+                      setActiveChatSession(null);
+                      setChatInitSessionId(null);
+                    } else if (activeApp === "xiaohongshu") {
+                      handleCloseXiaohongshu();
+                    } else if (activeApp === "shopping") {
+                      handleCloseShopping();
+                    } else {
+                      setActiveApp(null);
+                    }
+                  }
+                }}
                 onPointerDown={handleSwipeStart}
                 onPointerMove={handleSwipeMove}
                 onPointerUp={handleSwipeEnd}
