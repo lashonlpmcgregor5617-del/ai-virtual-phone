@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode, Ref } from "react";
+import { useRef, type ReactNode, type Ref } from "react";
 import { ChevronLeft } from "lucide-react";
 
 type PageShellProps = {
@@ -15,8 +15,38 @@ type PageShellProps = {
 };
 
 export function PageShell({ title = "", onBack, leftAction, rightAction, children, footer, className, bodyRef }: PageShellProps) {
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
   return (
-    <div className={`page-shell ${className ?? ""}`}>
+    <div
+      className={`page-shell ${className ?? ""}`}
+      onTouchStart={(e) => {
+        if (!onBack) return;
+        const touch = e.touches[0];
+        if (!touch) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const relX = touch.clientX - rect.left;
+        // 扩展边缘触发区域至 80px，更容易滑出返回手势
+        if (relX <= 80) {
+          touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+        } else {
+          touchStartRef.current = null;
+        }
+      }}
+      onTouchEnd={(e) => {
+        if (!onBack || !touchStartRef.current) return;
+        const touch = e.changedTouches[0];
+        if (!touch) return;
+        const dx = touch.clientX - touchStartRef.current.x;
+        const dy = Math.abs(touch.clientY - touchStartRef.current.y);
+        const dt = Date.now() - touchStartRef.current.time;
+        touchStartRef.current = null;
+        // 右滑（从左往右滑动）返回手势：水平位移 > 35px，纵向偏角合理
+        if (dx > 35 && dy < Math.max(55, dx * 0.9) && dt < 800) {
+          onBack();
+        }
+      }}
+    >
       <header className="page-header" data-ui="header">
         <div className="page-header-safe-area" />
         <div className="page-header-content">
