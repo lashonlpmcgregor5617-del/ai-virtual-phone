@@ -84,27 +84,59 @@ export function FloatingBackBall({
       return;
     }
 
-    // 点击事件（非拖拽）：执行逐级返回
+    // 点击事件（非拖拽）：执行系统级的精准逐级返回
     if (dt < 400) {
-      // 1. 尝试找到当前页面顶层的返回按钮并模拟点击（如聊天室返回、子设置返回等）
-      const backButtons = Array.from(
+      // 1. 优先关闭顶层弹窗/遮罩层 (Modal / Dialog / Drawer / Settings)
+      const visibleModalClose = Array.from(
         document.querySelectorAll<HTMLElement>(
-          '.page-back-btn, [aria-label="返回"], button.chat-room-back-btn, .header-back, .ui-back-btn'
+          '.modal-close, .dialog-close, .chat-settings-panel .page-back-btn, [data-modal-close="true"], .modal-overlay button.ui-btn-ghost'
         )
-      );
-
-      // 找一个可见的返回按钮
-      const visibleBackBtn = backButtons.reverse().find((btn) => {
-        const style = window.getComputedStyle(btn);
-        return style.display !== "none" && style.visibility !== "hidden" && btn.offsetParent !== null;
+      ).reverse().find(btn => {
+        const s = window.getComputedStyle(btn);
+        return s.display !== "none" && s.visibility !== "hidden" && btn.offsetParent !== null;
       });
 
-      if (visibleBackBtn) {
-        visibleBackBtn.click();
-      } else {
-        // 2. 如果没有子级返回按钮，则退出当前应用返回桌面
-        onCloseApp();
+      if (visibleModalClose) {
+        visibleModalClose.click();
+        return;
       }
+
+      // 2. 如果处于角色聊天室房间（.chat-room-layer 可见的层），精准触发房间顶部的返回按钮
+      const activeChatRoom = Array.from(
+        document.querySelectorAll<HTMLElement>('.chat-room-layer')
+      ).find(layer => {
+        const s = window.getComputedStyle(layer);
+        return s.display !== "none" && s.visibility !== "hidden" && layer.offsetParent !== null;
+      });
+
+      if (activeChatRoom) {
+        const roomBackBtn = activeChatRoom.querySelector<HTMLElement>(
+          'header .page-back-btn[aria-label="返回"], .page-back-btn'
+        );
+        if (roomBackBtn) {
+          roomBackBtn.click();
+          return;
+        }
+      }
+
+      // 3. 针对子页面容器内部真实的返回按钮（必须带有明确返回语义，且位于 header 内）
+      const specificBackBtns = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          'header .page-back-btn[aria-label="返回"], button[aria-label="返回"]'
+        )
+      ).reverse().find(btn => {
+        // 排除掉右上角的加号按钮（加号按钮带有其他图标，不作为返回按钮）
+        const s = window.getComputedStyle(btn);
+        return s.display !== "none" && s.visibility !== "hidden" && btn.offsetParent !== null;
+      });
+
+      if (specificBackBtns) {
+        specificBackBtns.click();
+        return;
+      }
+
+      // 4. 兜底：退出当前 App 返回桌面
+      onCloseApp();
     }
   }, [onCloseApp]);
 
