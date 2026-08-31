@@ -43,6 +43,7 @@ import { GiftPickerModal } from "./gift-picker-modal";
 import { ConfirmDialog } from "@/components/ui/modal";
 import { deleteWeixinCloudMessagesFromCloud, emitWeixinSyncToast, syncAllWeixinBotRuntimesToCloud } from "@/lib/weixin-cloud-sync";
 import { loadBindingConfig, loadRegexes, resolveBinding, resolveUserIdentity } from "@/lib/settings-storage";
+import { addChatFavorite } from "@/lib/chat-favorites";
 import { generateGroupChatCompletion, generateGroupOfflineChatCompletion, parseGroupChatResponse, buildEditableGroupRoundText } from "@/lib/group-chat-engine";
 import { appendChatOfflineTurn, deleteChatOfflineTurn, deleteChatOfflineTurnsFrom, loadChatOfflineTurns, parseOfflineResponse, saveChatOfflineTurns, updateChatOfflineTurn, type ChatOfflineTurn } from "@/lib/chat-offline-storage";
 import { applyDisplayRegex, applyEditRegex } from "@/lib/llm-prompt-assembler";
@@ -4662,6 +4663,28 @@ export function ChatRoom({ session, onBack, onDeleted }: ChatRoomProps) {
                 </div>
                 <div className="flex">
                     <button onClick={() => { setQuotingMessage(m); setActiveMessageId(null); }} className="ctx-menu-btn">引用</button>
+                    <button onClick={() => {
+                        const favType = m.mediaType === "image" ? "image" : m.mediaType === "audio" ? "voice" : "text";
+                        addChatFavorite({
+                            type: favType,
+                            characterId: m.senderCharacterId || session.contactId,
+                            characterName: m.role === "user" ? (userIdentity?.name || "你") : (m.senderName || character?.name || "对方"),
+                            characterAvatar: m.role === "user" ? userIdentity?.avatarUrl : (character?.avatar || undefined),
+                            content: m.content || (favType === "image" ? "[图片]" : "[语音]"),
+                            mediaUrl: m.mediaData?.url || m.mediaData?.dataUrl || undefined,
+                            mediaDuration: m.mediaData?.voiceDuration || undefined,
+                            originalMessageId: m.id,
+                            originalSessionId: session.id,
+                        });
+                        showChatToast("已收藏到「我」的主页");
+                        setActiveMessageId(null);
+                    }} className="ctx-menu-btn">⭐ 收藏</button>
+                    {m.mediaType === "audio" && (
+                        <button onClick={() => {
+                            void synthesizeVoiceForMessage(m, true);
+                            setActiveMessageId(null);
+                        }} className="ctx-menu-btn">🎧 重制语音</button>
+                    )}
                     {options?.allowMultiSelect !== false && (
                         <button onClick={() => startMultiSelectFromMessage(m)} className="ctx-menu-btn">多选</button>
                     )}
@@ -5881,33 +5904,60 @@ export function ChatRoom({ session, onBack, onDeleted }: ChatRoomProps) {
 
             {/* Input Bar — absolute at bottom, same layer as header */}
             {isMultiSelectMode && !offlineMode && (
-                <div className="chat-multi-select-bar chat-room-main-pane" data-ui="multi-select">
+                <div className="chat-multi-select-bar chat-room-main-pane flex items-center justify-between px-3 py-2 bg-[var(--c-panel,#ffffff)] border-t border-[var(--c-panel-border,rgba(0,0,0,0.06))] shadow-lg" data-ui="multi-select">
                     <button
                         type="button"
-                        className="chat-multi-select-icon-btn"
+                        className="chat-multi-select-icon-btn p-1.5 text-[var(--c-icon)] hover:text-[var(--c-text-title)]"
                         onClick={cancelMultiSelect}
                         aria-label="退出多选"
                         title="退出多选"
                     >
                         <X size={20} strokeWidth={1.8} />
                     </button>
-                    <div className="chat-multi-select-summary">
-                        <strong>已选 {selectedMessageIds.size} 条</strong>
-                        <span>
-                            {multiDeleteTargetIds.length > selectedMessageIds.size
-                                ? `实际删除 ${multiDeleteTargetIds.length} 条，含隐藏历史`
-                                : `实际删除 ${multiDeleteTargetIds.length} 条`}
-                        </span>
+                    <div className="chat-multi-select-summary text-center">
+                        <strong className="text-xs text-[var(--c-text-title)] block">已选 {selectedMessageIds.size} 条</strong>
                     </div>
-                    <button
-                        type="button"
-                        className="chat-multi-select-delete-btn"
-                        disabled={selectedMessageIds.size === 0 || multiDeleteTargetIds.length === 0}
-                        onClick={confirmMultiDelete}
-                    >
-                        <Trash2 size={18} strokeWidth={1.8} />
-                        删除
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                        <button
+                            type="button"
+                            className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 text-amber-600 text-xs font-semibold hover:bg-amber-500/20 transition-all disabled:opacity-40"
+                            disabled={selectedMessageIds.size === 0}
+                            onClick={() => {
+                                const stored = loadChatMessages(session.id);
+                                const selected = stored.filter(m => selectedMessageIds.has(m.id));
+                                if (selected.length === 0) return;
+                                addChatFavorite({
+                                    type: "combined",
+                                    characterId: session.contactId,
+                                    characterName: session.isGroup ? (session.groupName || "群聊") : (character?.name || "对方"),
+                                    characterAvatar: character?.avatar,
+                                    content: `合并了 ${selected.length} 条对话记录`,
+                                    originalSessionId: session.id,
+                                    combinedMessages: selected.map(m => ({
+                                        senderName: m.role === "user" ? (userIdentity?.name || "你") : (m.senderName || character?.name || "对方"),
+                                        avatar: m.role === "user" ? userIdentity?.avatarUrl : character?.avatar,
+                                        role: m.role as any,
+                                        content: m.content,
+                                        mediaType: m.mediaType,
+                                        mediaUrl: m.mediaData?.url || m.mediaData?.dataUrl,
+                                    })),
+                                });
+                                showChatToast(`已将 ${selected.length} 条对话收藏至「我」的主页`);
+                                cancelMultiSelect();
+                            }}
+                        >
+                            ⭐ 收藏
+                        </button>
+                        <button
+                            type="button"
+                            className="chat-multi-select-delete-btn px-2.5 py-1.5 rounded-lg bg-red-500/10 text-red-600 text-xs font-semibold hover:bg-red-500/20 transition-all flex items-center gap-1 disabled:opacity-40"
+                            disabled={selectedMessageIds.size === 0 || multiDeleteTargetIds.length === 0}
+                            onClick={confirmMultiDelete}
+                        >
+                            <Trash2 size={15} strokeWidth={1.8} />
+                            删除
+                        </button>
+                    </div>
                 </div>
             )}
             {!isMultiSelectMode && (offlineMode ? (

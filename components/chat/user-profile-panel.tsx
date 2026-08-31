@@ -38,6 +38,7 @@ import { ChatFallbackAvatar } from "./chat-fallback-avatar";
 import {
     Loader2,
     Bell,
+    Bookmark,
     CloudUpload,
     ChevronRight,
     Clock,
@@ -62,6 +63,8 @@ import {
     User,
     type LucideIcon,
 } from "lucide-react";
+import { ChatFavoritesPanel } from "./chat-favorites-panel";
+import { loadChatFavorites, FAVORITES_UPDATED_EVENT } from "@/lib/chat-favorites";
 import { BINDING_ACCENTS, CONTENT_APP_ACCENTS } from "@/lib/ui-accent-colors";
 
 type UserProfilePanelProps = {
@@ -160,6 +163,8 @@ export function UserProfilePanel({ onClose, className }: UserProfilePanelProps) 
     const [notifHint, setNotifHint] = useState<string | null>(null);
     const [notifChecking, setNotifChecking] = useState(false);
     const [showPushSettings, setShowPushSettings] = useState(false);
+    const [showFavorites, setShowFavorites] = useState(false);
+    const [favoritesCount, setFavoritesCount] = useState(0);
     const [enterToSendEnabled, setEnterToSendEnabled] = useState(false);
     const [callVibrationEnabled, setCallVibrationEnabled] = useState(true);
     const [userStats, setUserStats] = useState({ chats: 0, moments: 0, visitors: 1234 });
@@ -196,7 +201,15 @@ export function UserProfilePanel({ onClose, className }: UserProfilePanelProps) 
                 moments: userPostsCount,
                 visitors: 1234 + contactsCount * 17 + userPostsCount * 43 // simple deterministic mock equation
             });
+            setFavoritesCount(loadChatFavorites().length);
         } catch (e) { }
+
+        const handleFavUpdate = (e: Event) => {
+            const detail = (e as CustomEvent).detail;
+            setFavoritesCount(detail?.count ?? loadChatFavorites().length);
+        };
+        window.addEventListener(FAVORITES_UPDATED_EVENT, handleFavUpdate);
+        return () => window.removeEventListener(FAVORITES_UPDATED_EVENT, handleFavUpdate);
     }, []);
 
     useEffect(() => {
@@ -277,6 +290,9 @@ export function UserProfilePanel({ onClose, className }: UserProfilePanelProps) 
     }
     if (showWalletPanel) {
         return <WalletPanel onBack={() => { window.dispatchEvent(new CustomEvent("chat-hide-tabbar", { detail: false })); setShowWalletPanel(false); }} />;
+    }
+    if (showFavorites) {
+        return <ChatFavoritesPanel onClose={() => { window.dispatchEvent(new CustomEvent("chat-hide-tabbar", { detail: false })); setShowFavorites(false); }} />;
     }
 
     return (
@@ -401,6 +417,17 @@ export function UserProfilePanel({ onClose, className }: UserProfilePanelProps) 
                                 <Palette size={22} strokeWidth={2} />
                             </div>
                             <span className="ts-12 font-semibold text-[var(--c-text-title)]">外观CSS</span>
+                        </button>
+                        <button className="flex flex-col items-center gap-2 flex-1" onClick={() => { window.dispatchEvent(new CustomEvent("chat-hide-tabbar", { detail: true })); setShowFavorites(true); }}>
+                            <div className="w-[42px] h-[42px] rounded-[14px] bg-[#f59e0b]/15 text-[#f59e0b] flex items-center justify-center relative">
+                                <Bookmark size={22} strokeWidth={2} />
+                                {favoritesCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full shadow-sm">
+                                        {favoritesCount > 99 ? "99+" : favoritesCount}
+                                    </span>
+                                )}
+                            </div>
+                            <span className="ts-12 font-semibold text-[var(--c-text-title)]">我的收藏</span>
                         </button>
                     </div>
 

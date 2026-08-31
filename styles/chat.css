@@ -7055,3 +7055,84 @@
   object-fit: cover;
   display: block;
 }
+
+/* ── 白色毛玻璃优雅长按菜单 (可定制 CSS 变量) ── */
+:root {
+  --msg-menu-bg: rgba(255, 255, 255, 0.88);
+  --msg-menu-blur: 24px;
+  --msg-menu-radius: 18px;
+  --msg-menu-border: rgba(255, 255, 255, 0.65);
+  --msg-menu-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --msg-menu-text: #1f2937;
+  --msg-menu-item-hover: rgba(0, 0, 0, 0.05);
+}
+
+.chat-floating-ctx-menu {
+  background: var(--msg-menu-bg) !important;
+  backdrop-filter: blur(var(--msg-menu-blur)) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(var(--msg-menu-blur)) saturate(160%) !important;
+  border-radius: var(--msg-menu-radius) !important;
+  border: 1px solid var(--msg-menu-border) !important;
+  box-shadow: var(--msg-menu-shadow) !important;
+  color: var(--msg-menu-text) !important;
+  padding: 6px !important;
+  max-width: 90vw !important;
+  z-index: 100 !important;
+  animation: ctxMenuPop 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes ctxMenuPop {
+  0% { opacity: 0; transform: scale(0.92) translateY(4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.chat-floating-ctx-menu .flex {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 3px !important;
+  width: 100% !important;
+  justify-content: center !important;
+}
+
+.chat-floating-ctx-menu .ctx-menu-btn {
+  background: transparent !important;
+  color: var(--msg-menu-text) !important;
+  font-size: calc(12px * var(--app-text-scale, 1)) !important;
+  font-weight: 500 !important;
+  padding: 6px 10px !important;
+  border-radius: 10px !important;
+  min-height: 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background 0.12s ease, transform 0.08s ease !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+.chat-floating-ctx-menu .ctx-menu-btn:hover {
+  background: var(--msg-menu-item-hover) !important;
+}
+
+.chat-floating-ctx-menu .ctx-menu-btn:active {
+  transform: scale(0.94) !important;
+  background: rgba(0, 0, 0, 0.08) !important;
+}
+
+.chat-floating-ctx-menu .ctx-menu-btn-danger {
+  color: #ef4444 !important;
+}
+
+.chat-floating-ctx-menu .ctx-menu-triangle {
+  border-bottom-color: var(--msg-menu-bg) !important;
+}
+
+/* ── 引用区域可滑动与上限约束 ── */
+.chat-quoting-banner {
+  max-height: 90px !important;
+  overflow-y: auto !important;
+  scrollbar-width: none !important;
+}
+.chat-quoting-banner::-webkit-scrollbar {
+  display: none !important;
+}
